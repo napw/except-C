@@ -8,6 +8,10 @@
 
 Except *ExceptStack = NULL;
 
+static void PrintStrace(){
+
+}
+
 void RaiseExcept(const ExceptMessage *m, const char *filename, int line) {
     Except *latest = ExceptStack;
     assert(m);
@@ -22,6 +26,7 @@ void RaiseExcept(const ExceptMessage *m, const char *filename, int line) {
             fprintf(stderr, " raised at %s:%d\n", filename, line);
         }
         fprintf(stderr, "program aborting\n");
+        PrintStrace();
         fflush(stderr);
         abort();
     }

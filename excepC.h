@@ -33,25 +33,38 @@ void RaiseExcept(const ExceptMessage *m, const char *filename, int line);
 #define RETURN switch(ExceptStack=ExceptStack->Prev,0){default:return}
 #define CANCELUNRAISEDEXCEPTION if(ExceptFlag==ExceptEntered){ ExceptStack=ExceptStack->Prev;}
 
-#define TRY do{\
-    Except except;\
-    except.Prev=ExceptStack;\
-    ExceptStack=&except;\
-    volatile int ExceptFlag=setjmp(except.env);\
-    if (ExceptFlag==ExceptEntered){\
+#define TRY \
+    do{\
+        Except except;\
+        except.Prev=ExceptStack;\
+        ExceptStack=&except;\
+        volatile int ExceptFlag=setjmp(except.env);\
+        if (ExceptFlag==ExceptEntered){\
 
 #define CATCH(e)\
-        CANCELUNRAISEDEXCEPTION\
-    }else if(except.What==&(e)){\
-        ExceptFlag=ExceptHandled;\
+            CANCELUNRAISEDEXCEPTION\
+        }else if(except.What==&(e)){\
+            ExceptFlag=ExceptHandled;\
+
+#define FINALLY\
+            CANCELUNRAISEDEXCEPTION\
+        } {\
+            if (ExceptFlag==ExceptEntered){\
+                ExceptFlag=ExceptFinalized;\
+            }
+
+#define ELSE\
+            CANCELUNRAISEDEXCEPTION\
+        }else{\
+            ExceptFlag=ExceptHandled;
 
 #define ENDTRY\
-        CANCELUNRAISEDEXCEPTION\
-    }\
-    if(ExceptFlag==ExceptRaised){\
-        RERAISE;\
-    }\
-}while(0);
+            CANCELUNRAISEDEXCEPTION\
+        }\
+        if(ExceptFlag==ExceptRaised){\
+            RERAISE;\
+        }\
+    }while(0);
 
 
 #endif //SETJMP_EXCEPC_H
