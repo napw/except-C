@@ -1,14 +1,23 @@
 //
 // Created by wpans on 2018/9/29.
 //
-#include <assert.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "excepC.h"
 
 Except *ExceptStack = NULL;
 
-static void PrintStrace(){
+
+//#ifdef ENABLEBACKTRACE
+BackTrace* TraceStack=NULL;
+//#endif
+
+static void PrintTrace(){
+    while(TraceStack!=NULL){
+        fprintf(stderr,"in func: %s at file: %s, line: %d\n",TraceStack->FuncCalled,TraceStack->FileName,TraceStack->Line);
+        TraceStack=TraceStack->Prev;
+    }
 
 }
 
@@ -25,8 +34,8 @@ void RaiseExcept(const ExceptMessage *m, const char *filename, int line) {
         if (filename != NULL && line > 0) {
             fprintf(stderr, " raised at %s:%d\n", filename, line);
         }
-        fprintf(stderr, "program aborting\n");
-        PrintStrace();
+        //fprintf(stderr, "program aborting\n");
+        PrintTrace();
         fflush(stderr);
         abort();
     }

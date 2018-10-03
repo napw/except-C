@@ -6,6 +6,7 @@
 #define SETJMP_EXCEPC_H
 
 #include <setjmp.h>
+#include <assert.h>
 
 typedef struct ExceptMessage {
     char *message;
@@ -24,7 +25,7 @@ enum {
 };
 
 extern Except *ExceptStack;
-extern const ExceptMessage AssertFailed;
+//extern const ExceptMessage AssertFailed;
 
 void RaiseExcept(const ExceptMessage *m, const char *filename, int line);
 
@@ -65,6 +66,35 @@ void RaiseExcept(const ExceptMessage *m, const char *filename, int line);
             RERAISE;\
         }\
     }while(0);
+
+//#ifndef BACKTRACE
+//#define BACKTRACE
+//#endif
+
+    typedef struct BackTrace{
+        struct BackTrace* Prev;
+        const char* FuncCalled;
+        const char* FileName;
+        int Line;
+    }BackTrace;
+    extern BackTrace* TraceStack;
+#define PUSHTRACEINFO do{\
+    BackTrace anchor;\
+    anchor.Prev=TraceStack;\
+    TraceStack=&anchor;\
+
+#define POPTRACEINFO \
+    assert(TraceStack);\
+    TraceStack=TraceStack->Prev;\
+}while(0);\
+
+#define TRACK(func) \
+    PUSHTRACEINFO\
+    anchor.FileName=__FILE__;\
+    anchor.Line=__LINE__;\
+    anchor.FuncCalled=#func;\
+    func;\
+    POPTRACEINFO\
 
 
 #endif //SETJMP_EXCEPC_H
