@@ -35,7 +35,15 @@
 
     int main() {
         int x;
-        TRACK(x=func1())
+        TRY
+            TRACK(x=func1())
+        CATCH(except1)
+            printf("except1 caught\n");
+        CATCH(except2)
+            printf("except1 caught\n");
+        FINALLY
+            printf("finally block aways be executed\n");
+        ENDTRY
         printf("%d",x);
     }
 ```
