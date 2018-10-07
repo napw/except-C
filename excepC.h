@@ -24,8 +24,7 @@ enum {
     ExceptEntered = 0, ExceptRaised, ExceptHandled, ExceptFinalized
 };
 
-extern Except *ExceptStack;
-//extern const ExceptMessage AssertFailed;
+extern __thread Except *ExceptStack;
 
 void RaiseExcept(const ExceptMessage *m, const char *filename, int line);
 
@@ -67,33 +66,40 @@ void RaiseExcept(const ExceptMessage *m, const char *filename, int line);
         }\
     }while(0);
 
-//#ifndef BACKTRACE
-//#define BACKTRACE
-//#endif
+typedef struct BackTrace{
+    struct BackTrace* Prev;
+    const char* FuncCalled;
+    const char* FileName;
+    int Line;
+}BackTrace;
 
-    typedef struct BackTrace{
-        struct BackTrace* Prev;
-        const char* FuncCalled;
-        const char* FileName;
-        int Line;
-    }BackTrace;
-    extern BackTrace* TraceStack;
-#define PUSHTRACEINFO do{\
-    BackTrace anchor;\
-    anchor.Prev=TraceStack;\
-    TraceStack=&anchor;\
+#ifndef MAXCOUNTER
+#define MAXCOUNTER 256
+#endif
+
+//backtrace info declaration
+extern __thread int BTCounter;
+extern __thread BackTrace TraceStack[MAXCOUNTER];
+
+#define PUSHTRACEINFO(func) do{\
+    if (BTCounter<MAXCOUNTER){\
+        TraceStack[BTCounter].FileName=__FILE__;\
+        TraceStack[BTCounter].Line=__LINE__;\
+        TraceStack[BTCounter].FuncCalled=#func;\
+        ++BTCounter;\
+    }\
+
 
 #define POPTRACEINFO \
-    assert(TraceStack);\
-    TraceStack=TraceStack->Prev;\
+    assert(TraceStack>0);\
+    if (BTCounter<MAXCOUNTER){\
+        --BTCounter;\
+    }\
 }while(0);\
 
 #define TRACK(func) \
-    PUSHTRACEINFO\
-    anchor.FileName=__FILE__;\
-    anchor.Line=__LINE__;\
-    anchor.FuncCalled=#func;\
-    func;\
+    PUSHTRACEINFO(func)\
+    (func);\
     POPTRACEINFO\
 
 
