@@ -9,19 +9,21 @@
 __thread Except *ExceptStack = NULL;
 
 __thread BackTrace TraceStack[MAXCOUNTER];
-__thread int BTCounter=0;
+__thread int BTCounter = 0;
+__thread ExceptMessage *SignalMapper[65];
 
 
-static void PrintTrace(){
+static void PrintTrace() {
     --BTCounter;
-    while(BTCounter>=0){
-        fprintf(stderr,"in func: %s at file: %s, line: %d\n",TraceStack[BTCounter].FuncCalled,TraceStack[BTCounter].FileName,TraceStack[BTCounter].Line);
+    while (BTCounter >= 0) {
+        fprintf(stderr, "in func: %s at file: %s, line: %d\n", TraceStack[BTCounter].FuncCalled,
+                TraceStack[BTCounter].FileName, TraceStack[BTCounter].Line);
         --BTCounter;
     }
 
 }
 
-void RaiseExcept(const ExceptMessage *m, const char *filename, int line) {
+void RaiseExcept(const ExceptMessage *m, const char *filename, int line, char IsSignal) {
     Except *latest = ExceptStack;
     assert(m);
     if (latest == NULL) {
@@ -31,9 +33,14 @@ void RaiseExcept(const ExceptMessage *m, const char *filename, int line) {
         } else {
             fprintf(stderr, " at 0x%p", m);
         }
-        if (filename != NULL && line > 0) {
-            fprintf(stderr, " raised at %s:%d\n", filename, line);
+        if (!IsSignal) {
+            if (filename != NULL && line > 0) {
+                fprintf(stderr, " raised at %s:%d\n", filename, line);
+            }
+        } else {
+            fprintf(stderr," bind to signal %d",IsSignal);
         }
+
         PrintTrace();
         fflush(stderr);
         abort();
@@ -41,7 +48,22 @@ void RaiseExcept(const ExceptMessage *m, const char *filename, int line) {
     latest->What = m;
     latest->FileName = filename;
     latest->Line = line;
+    latest->IsSignal = IsSignal;
     ExceptStack = ExceptStack->Prev;
-    //
     longjmp(latest->env, ExceptRaised);
+}
+
+int BindSignal2Except(int sig, ExceptMessage *e) {
+    if (sig > 64) {
+        return -1;
+    } else {
+        SignalMapper[sig] = e;
+        return signal(sig, Signal2Except) < 0 ? -1 : 0;
+    }
+}
+
+
+void Signal2Except(int sig) {
+    assert(SignalMapper[sig]);
+    RaiseExcept(SignalMapper[sig], NULL, 0, sig);
 }

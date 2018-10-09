@@ -7,6 +7,7 @@
 
 #include <setjmp.h>
 #include <assert.h>
+#include <signal.h>
 
 typedef struct ExceptMessage {
     char *message;
@@ -17,8 +18,9 @@ typedef struct Except {
     const char *FileName;
     int Line;
     const ExceptMessage *What;
-
+    char IsSignal;
 } Except;
+
 
 enum {
     ExceptEntered = 0, ExceptRaised, ExceptHandled, ExceptFinalized
@@ -26,10 +28,12 @@ enum {
 
 extern __thread Except *ExceptStack;
 
-void RaiseExcept(const ExceptMessage *m, const char *filename, int line);
+void RaiseExcept(const ExceptMessage *m, const char *filename, int line, char IsSignal);
+int BindSignal2Except(int signal, ExceptMessage *e);
+void Signal2Except(int signal);
 
-#define THROW(m) RaiseExcept(&(m),__FILE__,__LINE__)
-#define RERAISE RaiseExcept(except.What,except.FileName,except.Line)
+#define THROW(m) RaiseExcept(&(m),__FILE__,__LINE__,0)
+#define RERAISE RaiseExcept(except.What,except.FileName,except.Line,except.IsSignal)
 #define RETURN switch(ExceptStack=ExceptStack->Prev,0){default:return}
 #define CANCELUNRAISEDEXCEPTION if(ExceptFlag==ExceptEntered){ ExceptStack=ExceptStack->Prev;}
 
@@ -102,5 +106,7 @@ extern __thread BackTrace TraceStack[MAXCOUNTER];
     (func);\
     POPTRACEINFO\
 
+
+extern __thread  ExceptMessage* SignalMapper[65];
 
 #endif //SETJMP_EXCEPC_H
