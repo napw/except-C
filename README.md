@@ -36,7 +36,10 @@
     int main() {
         int x;
         TRY
-            TRACK(x=func1())
+            TRY
+                TRACK(x=func1())
+            CATCH(except1)
+            ENDTRY
         CATCH(except1)
             printf("except1 caught\n");
         CATCH(except2)
