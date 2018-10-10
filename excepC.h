@@ -31,11 +31,13 @@ extern __thread Except *ExceptStack;
 void RaiseExcept(const ExceptMessage *m, const char *filename, int line, char IsSignal);
 int BindSignal2Except(int signal, ExceptMessage *e);
 void Signal2Except(int signal);
+void ReSetSignalBind(int signal);
 
 #define THROW(m) RaiseExcept(&(m),__FILE__,__LINE__,0)
 #define RERAISE RaiseExcept(except.What,except.FileName,except.Line,except.IsSignal)
 #define RETURN switch(ExceptStack=ExceptStack->Prev,0){default:return}
 #define CANCELUNRAISEDEXCEPTION if(ExceptFlag==ExceptEntered){ ExceptStack=ExceptStack->Prev;}
+#define BINDSIGNALTOEXCEPTION(sig,Except) BindSignal2Except(sig,&(Except))
 
 #define TRY \
     do{\

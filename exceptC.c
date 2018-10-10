@@ -38,7 +38,7 @@ void RaiseExcept(const ExceptMessage *m, const char *filename, int line, char Is
                 fprintf(stderr, " raised at %s:%d\n", filename, line);
             }
         } else {
-            fprintf(stderr," bind to signal %d",IsSignal);
+            fprintf(stderr, " raised by signal %d\n", IsSignal);
         }
 
         PrintTrace();
@@ -54,7 +54,7 @@ void RaiseExcept(const ExceptMessage *m, const char *filename, int line, char Is
 }
 
 int BindSignal2Except(int sig, ExceptMessage *e) {
-    if (sig > 64) {
+    if (sig > 64 || sig < 1) {
         return -1;
     } else {
         SignalMapper[sig] = e;
@@ -66,4 +66,9 @@ int BindSignal2Except(int sig, ExceptMessage *e) {
 void Signal2Except(int sig) {
     assert(SignalMapper[sig]);
     RaiseExcept(SignalMapper[sig], NULL, 0, sig);
+}
+
+void ReSetSignalBind(int sig) {
+    SignalMapper[sig]=NULL;
+    signal(sig,SIG_DFL);
 }
