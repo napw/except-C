@@ -88,7 +88,9 @@ extern __thread int BTCounter;
 extern __thread BackTrace TraceStack[MAXCOUNTER];
 
 #define PUSHTRACEINFO(func) do{\
+    int pushed=0;\
     if (BTCounter<MAXCOUNTER){\
+        pushed=1;\
         TraceStack[BTCounter].FileName=__FILE__;\
         TraceStack[BTCounter].Line=__LINE__;\
         TraceStack[BTCounter].FuncCalled=#func;\
@@ -98,7 +100,7 @@ extern __thread BackTrace TraceStack[MAXCOUNTER];
 
 #define POPTRACEINFO \
     assert(TraceStack>0);\
-    if (BTCounter<MAXCOUNTER){\
+    if (pushed){\
         --BTCounter;\
     }\
 }while(0);\
